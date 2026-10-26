@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>数字大挑战 · 英语抢答 PK</title>
+<style>
+/* ==================== 基础 ==================== */
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#FFF8EE;
+  --ink:#515868;
+  --muted:#9AA0AE;
+  --p1:#7EC8E3;
+  --p1-soft:#EAF7FC;
+  --p2:#F4A6A0;
+  --p2-soft:#FEF0EF;
+  --accent:#FFC96B;
+  --accent-dark:#E09A2E;
+  --green:#5DBE8B;
+  --red:#F08A80;
+  --line:#F0E9DD;
+}
+html,body{height:100%;}
+body{
+  font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;
+  color:var(--ink);
+  background-color:var(--bg);
+  background-image:radial-gradient(#FFE8C7 1.6px, transparent 1.6px);
+  background-size:28px 28px;
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;border:none;background:none;cursor:pointer;color:inherit;}
+.hidden{display:none !important;}
+
+/* ==================== 设置界面 ==================== */
+.setup{
+  min-height:100dvh;
+  display:flex;align-items:center;justify-content:center;
+  padding:28px 20px;
+  overflow-y:auto;
+}
+.setup-inner{
+  width:min(920px,100%);
+  display:flex;flex-direction:column;align-items:center;
+  gap:26px;
+  animation:fadeUp .5s ease;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+
+.setup h1{
+  font-size:clamp(26px,4.2vw,44px);
+  letter-spacing:2px;
+  color:#4A4356;
+  text-align:center;
+}
+.setup .sub{
+  margin-top:-14px;
+  font-size:clamp(13px,1.5vw,16px);
+  color:var(--muted);
+  letter-spacing:1px;
+}
+
+.panel{
+  width:100%;
+  display:flex;flex-direction:column;align-items:center;gap:14px;
+}
+.panel h2{
+  font-size:clamp(14px,1.7vw,18px);
+  font-weight:600;color:var(--muted);
+  display:flex;align-items:center;gap:9px;
+  letter-spacing:.5px;
+}
+.step{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:24px;height:24px;border-radius:50%;
+  background:var(--accent);color:#fff;
+  font-size:13px;font-weight:800;
+}
+
+.opt-grid{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;width:100%;}
+
+.opt{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  min-width:126px;padding:12px 18px;
+  background:#fff;
+  border:2.5px solid var(--line);
+  border-radius:18px;
+  box-shadow:0 4px 0 var(--line);
+  transition:transform .15s,box-shadow .15s,border-color .15s,background .15s;
+  color:var(--ink);
+}
+.opt:hover:not(:disabled){transform:translateY(-2px);border-color:#FFD28A;box-shadow:0 6px 0 var(--line);}
+.opt:active:not(:disabled){transform:translateY(2px);box-shadow:0 2px 0 var(--line);}
+.opt.selected{background:#FFF7E8;border-color:var(--accent);box-shadow:0 4px 0 #F0C078;}
+.opt:disabled{opacity:.32;box-shadow:none;cursor:not-allowed;}
+.opt-main{font-size:clamp(16px,1.9vw,20px);font-weight:800;letter-spacing:.5px;}
+.opt-sub{font-size:12px;color:var(--muted);}
+.stars{font-size:11px;color:var(--accent);letter-spacing:2px;margin-top:1px;}
+
+.tip{
+  font-size:12.5px;color:#C09A4E;background:#FFF6E4;
+  padding:6px 16px;border-radius:999px;display:none;
+}
+
+.btn-start{
+  padding:14px 50px;
+  font-size:clamp(17px,2.1vw,22px);
+  font-weight:800;letter-spacing:2px;color:#fff;
+  background:linear-gradient(180deg,#FFD180,#FFB13D);
+  border-radius:999px;
+  box-shadow:0 6px 0 var(--accent-dark);
+  transition:transform .12s,box-shadow .12s;
+}
+.btn-start:hover{transform:translateY(-2px);box-shadow:0 8px 0 var(--accent-dark);}
+.btn-start:active{transform:translateY(4px);box-shadow:0 2px 0 var(--accent-dark);}
+
+/* ==================== 游戏界面 ==================== */
+.game{
+  position:fixed;inset:0;
+  display:flex;flex-direction:column;
+  padding:12px 20px 18px;
+  gap:10px;
+  overflow:hidden;
+}
+
+.hud{
+  flex:none;
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
+  align-items:center;
+  gap:12px;
+}
+.round-pill{
+  justify-self:start;
+  padding:6px 18px;border-radius:999px;
+  background:#fff;border:2px solid var(--line);
+  font-size:clamp(13px,1.5vw,16px);color:var(--muted);font-weight:600;
+  white-space:nowrap;
+}
+.round-pill b{color:var(--ink);font-size:1.3em;margin:0 2px;}
+
+.speaker-btn{
+  padding:10px 28px;border-radius:999px;
+  background:#fff;border:2.5px solid var(--p1);
+  color:#3E93B5;font-weight:800;letter-spacing:1px;
+  font-size:clamp(13px,1.6vw,17px);
+  box-shadow:0 4px 0 #CBE8F3;
+  transition:transform .12s,box-shadow .12s;
+  white-space:nowrap;
+}
+.speaker-btn:hover{transform:translateY(-2px);box-shadow:0 6px 0 #CBE8F3;}
+.speaker-btn:active{transform:translateY(2px);box-shadow:0 2px 0 #CBE8F3;}
+
+.btn-ghost{
+  justify-self:end;
+  padding:8px 20px;border-radius:999px;
+  background:#fff;border:2px solid var(--line);
+  color:var(--muted);font-weight:700;font-size:13px;
+  transition:background .15s,color .15s;
+  white-space:nowrap;
+}
+.btn-ghost:hover{background:#F7F1E8;color:var(--ink);}
+
+.arena{
+  flex:1;min-height:0;
+  display:flex;align-items:center;justify-content:center;
+  gap:clamp(16px,3vw,60px);
+}
+
+.player{display:flex;flex-direction:column;align-items:center;gap:10px;}
+.player-head{
+  display:flex;align-items:center;gap:10px;
+  font-weight:800;font-size:clamp(14px,1.6vw,18px);
+}
+.avatar{font-size:1.5em;line-height:1;}
+
+/* ---------- 大分数徽章 ---------- */
+.score-badge{
+  min-width:74px;
+  padding:3px 20px;
+  border-radius:18px;
+  background:linear-gradient(180deg,#8FD2EA,#6FBFDD);
+  color:#fff;
+  font-size:clamp(24px,2.9vw,36px);
+  font-weight:900;
+  line-height:1.2;
+  text-align:center;
+  letter-spacing:1px;
+  box-shadow:0 4px 0 rgba(110,180,210,.55), inset 0 2px 0 rgba(255,255,255,.45);
+  transition:transform .18s;
+  font-variant-numeric:tabular-nums;
+}
+.p2 .score-badge{
+  background:linear-gradient(180deg,#F8B6B0,#F0988F);
+  box-shadow:0 4px 0 rgba(225,150,140,.55), inset 0 2px 0 rgba(255,255,255,.45);
+}
+.score-badge.bump{animation:bump .5s;}
+@keyframes bump{
+  0%{transform:scale(1);}
+  35%{transform:scale(1.35) rotate(-3deg);}
+  65%{transform:scale(1.18) rotate(2deg);}
+  100%{transform:scale(1);}
+}
+
+.board{
+  display:grid;
+  border-radius:22px;
+  background:#fff;
+  border:3px solid #C9E6F2;
+  box-shadow:0 8px 24px rgba(126,200,227,.20);
+  user-select:none;
+}
+.p2 .board{border-color:#F7C6C1;box-shadow:0 8px 24px rgba(244,166,160,.20);}
+
+.cell{
+  display:flex;align-items:center;justify-content:center;
+  background:#FFFCF6;
+  border:2px solid #F0EBE2;
+  border-radius:14px;
+  font-weight:800;
+  color:#515868;
+  min-width:0;min-height:0;
+  line-height:1;
+  transition:transform .1s,background .15s,border-color .15s;
+  -webkit-tap-highlight-color:transparent;
+}
+@media (hover:hover){
+  .cell:not(.correct):not(.reveal):hover{background:#FFF4E0;border-color:#FFD79A;}
+}
+.cell:active{transform:scale(.94);}
+.cell.correct{background:#CBF2DA;border-color:#6ECB92;color:#2E7D53;animation:pop .4s;}
+.cell.reveal{background:#EFFAF3;border-color:#B7E6C9;color:#7CB99A;}
+.cell.wrong{background:#FFDCD8;border-color:var(--red);animation:shake .4s;}
+
+@keyframes pop{0%{transform:scale(1);}50%{transform:scale(1.14);}100%{transform:scale(1);}}
+@keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-6px);}75%{transform:translateX(6px);}}
+
+.plus-one{
+  position:fixed;
+  pointer-events:none;
+  font-weight:900;
+  font-size:38px;
+  color:var(--green);
+  text-shadow:0 2px 0 #fff;
+  animation:floatUp .9s ease-out forwards;
+  z-index:80;
+}
+@keyframes floatUp{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.5);}
+  25%{opacity:1;transform:translate(-50%,-75%) scale(1.15);}
+  100%{opacity:0;transform:translate(-50%,-180%) scale(1);}
+}
+
+/* ==================== 结算弹窗 ==================== */
+.overlay{
+  position:fixed;inset:0;z-index:90;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(255,248,238,.88);
+  backdrop-filter:blur(6px);
+  -webkit-backdrop-filter:blur(6px);
+  animation:fadeIn .3s;
+  padding:20px;
+}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+
+.result-card{
+  position:relative;
+  background:#fff;
+  border:3px solid #F5EEDF;
+  border-radius:30px;
+  padding:clamp(24px,4vw,40px) clamp(28px,5vw,56px);
+  box-shadow:0 20px 50px rgba(150,130,100,.20);
+  display:flex;flex-direction:column;align-items:center;gap:18px;
+  animation:popIn .45s cubic-bezier(.2,1.3,.5,1);
+  max-width:92vw;
+  z-index:2;
+}
+@keyframes popIn{from{transform:scale(.8);opacity:0;}to{transform:scale(1);opacity:1;}}
+
+.result-emoji{
+  font-size:clamp(48px,7.5vw,74px);
+  line-height:1;
+  animation:emojiIn .7s cubic-bezier(.2,1.4,.5,1) both,
+            emojiFloat 2.6s ease-in-out .7s infinite;
+  filter:drop-shadow(0 6px 14px rgba(255,190,80,.45));
+}
+@keyframes emojiIn{
+  0%{transform:scale(0) rotate(-30deg);opacity:0;}
+  60%{transform:scale(1.2) rotate(6deg);opacity:1;}
+  100%{transform:scale(1) rotate(0);}
+}
+@keyframes emojiFloat{
+  0%,100%{transform:translateY(0) rotate(-2deg);}
+  50%{transform:translateY(-8px) rotate(2deg);}
+}
+
+.result-card h2{
+  font-size:clamp(20px,2.6vw,28px);
+  letter-spacing:1px;
+  text-align:center;
+  animation:titleGlow 1.8s ease-in-out infinite;
+}
+@keyframes titleGlow{
+  0%,100%{text-shadow:0 0 0 rgba(255,201,107,0);}
+  50%{text-shadow:0 0 18px rgba(255,201,107,.85);}
+}
+
+.result-scores{
+  display:flex;gap:clamp(14px,3vw,36px);
+  padding-top:30px;               /* 给皇冠留位置 */
+}
+
+.rs{
+  position:relative;
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:14px 26px;border-radius:20px;min-width:126px;
+  transition:transform .2s;
+}
+.rs span{font-size:13px;color:var(--muted);font-weight:600;}
+.rs b{font-size:clamp(34px,5vw,52px);line-height:1;font-variant-numeric:tabular-nums;}
+.rs.p1{background:var(--p1-soft);}
+.rs.p1 b{color:#3E93B5;}
+.rs.p2{background:var(--p2-soft);}
+.rs.p2 b{color:#D9736C;}
+
+/* ---------- 获胜方特效 ---------- */
+.rs.winner{
+  animation:winnerPulse 1.3s ease-in-out infinite;
+  box-shadow:0 0 0 4px rgba(255,201,107,.55), 0 12px 30px rgba(255,180,60,.38);
+}
+.rs.winner b{color:#E09A2E;text-shadow:0 2px 0 #fff, 0 0 18px rgba(255,190,70,.7);}
+.rs.winner span{color:#B98A34;font-weight:800;}
+
+@keyframes winnerPulse{
+  0%,100%{transform:scale(1);}
+  50%{transform:scale(1.06);}
+}
+
+/* 扩散光环 */
+.rs.winner::before{
+  content:'';
+  position:absolute;inset:-8px;
+  border-radius:26px;
+  border:3px solid rgba(255,201,107,.75);
+  animation:ringBurst 1.6s ease-out infinite;
+  pointer-events:none;
+}
+@keyframes ringBurst{
+  0%{transform:scale(.92);opacity:.9;}
+  100%{transform:scale(1.3);opacity:0;}
+}
+
+/* 皇冠 */
+.rs.winner::after{
+  content:'👑';
+  position:absolute;
+  top:-32px;left:50%;
+  transform:translateX(-50%);
+  font-size:30px;
+  line-height:1;
+  animation:crownBounce 1.4s ease-in-out infinite;
+  filter:drop-shadow(0 3px 6px rgba(220,170,50,.5));
+  pointer-events:none;
+}
+@keyframes crownBounce{
+  0%,100%{transform:translateX(-50%) translateY(0) rotate(-6deg);}
+  50%{transform:translateX(-50%) translateY(-7px) rotate(6deg);}
+}
+
+/* ---------- 彩带层 ---------- */
+.confetti-layer{
+  position:absolute;inset:0;
+  overflow:hidden;
+  pointer-events:none;
+  z-index:1;
+}
+.confetti{
+  position:absolute;
+  top:-32px;
+  opacity:0;
+  animation-name:confettiFall;
+  animation-timing-function:linear;
+  animation-iteration-count:infinite;
+  will-change:transform,opacity;
+}
+@keyframes confettiFall{
+  0%{opacity:0;transform:translate3d(0,0,0) rotate(0deg);}
+  6%{opacity:1;}
+  85%{opacity:1;}
+  100%{opacity:0;transform:translate3d(var(--drift,0px),105vh,0) rotate(var(--spin,360deg));}
+}
+
+.result-actions{display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:center;}
+.result-actions .btn-start{padding:12px 34px;font-size:17px;letter-spacing:1px;}
+
+@media (max-width:520px){
+  .hud{grid-template-columns:auto 1fr auto;}
+  .speaker-btn{padding:8px 16px;font-size:12px;}
+  .round-pill{padding:5px 12px;font-size:12px;}
+  .score-badge{min-width:62px;padding:2px 14px;border-radius:15px;}
+  .rs{min-width:104px;padding:12px 16px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== 设置界面 ==================== -->
+<div id="setupScreen" class="setup">
+  <div class="setup-inner">
+    <h1>🎈 数字大挑战</h1>
+    <p class="sub">听英文数字，抢先点出来！</p>
+
+    <section class="panel">
+      <h2><span class="step">1</span>选择数字范围</h2>
+      <div class="opt-grid" id="difficultyOptions"></div>
+    </section>
+
+    <section class="panel">
+      <h2><span class="step">2</span>选择格子大小</h2>
+      <div class="opt-grid" id="gridOptions"></div>
+      <p class="tip" id="gridTip"></p>
+    </section>
+
+    <button id="startBtn" class="btn-start">开始游戏 →</button>
+  </div>
+</div>
+
+<!-- ==================== 游戏界面 ==================== -->
+<div id="gameScreen" class="game hidden">
+  <header class="hud">
+    <div class="round-pill">第 <b id="roundNum">1</b> / 9 题</div>
+    <button id="speakerBtn" class="speaker-btn">🔊 再听一次</button>
+    <button id="quitBtn" class="btn-ghost">结束</button>
+  </header>
+
+  <main class="arena">
+    <section class="player p1">
+      <div class="player-head">
+        <span class="avatar">🐻</span>
+        <span>小朋友 A</span>
+        <span class="score-badge" id="score0">0</span>
+      </div>
+      <div class="board" id="board0"></div>
+    </section>
+
+    <section class="player p2">
+      <div class="player-head">
+        <span class="avatar">🐰</span>
+        <span>小朋友 B</span>
+        <span class="score-badge" id="score1">0</span>
+      </div>
+      <div class="board" id="board1"></div>
+    </section>
+  </main>
+</div>
+
+<!-- ==================== 结算 ==================== -->
+<div id="resultScreen" class="overlay hidden">
+  <div class="confetti-layer" id="confettiLayer"></div>
+  <div class="result-card">
+    <div class="result-emoji" id="resultEmoji">🏆</div>
+    <h2 id="resultTitle">小朋友 A 获胜！</h2>
+    <div class="result-scores">
+      <div class="rs p1" id="rs0"><span>🐻 小朋友 A</span><b id="finalScore0">0</b></div>
+      <div class="rs p2" id="rs1"><span>🐰 小朋友 B</span><b id="finalScore1">0</b></div>
+    </div>
+    <div class="result-actions">
+      <button id="againBtn" class="btn-start">再玩一次</button>
+      <button id="backBtn" class="btn-ghost">返回设置</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ==================== 工具函数 ==================== */
+const $ = id => document.getElementById(id);
+const range = (a, b) => { const r = []; for (let i = a; i <= b; i++) r.push(i); return r; };
+
+function shuffle(arr){
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/* ==================== 配置数据 ==================== */
+const DIFFICULTIES = [
+  { id:'d1', label:'1 ~ 10',      tag:'小小数字', stars:1, nums: range(1, 10) },
+  { id:'d2', label:'11 ~ 20',     tag:'进阶数字', stars:2, nums: range(11, 20) },
+  { id:'d3', label:'1 ~ 20',      tag:'混合练习', stars:2, nums: range(1, 20) },
+  { id:'d4', label:'1 ~ 100',     tag:'超级挑战', stars:3, nums: range(1, 100) },
+  { id:'d5', label:'整十数',       tag:'20, 30 … 100', stars:2, nums:[20,30,40,50,60,70,80,90,100] }
+];
+
+const GRIDS = [
+  { size:3, label:'3 × 3' },
+  { size:4, label:'4 × 4' },
+  { size:5, label:'5 × 5' }
+];
+
+const TOTAL_ROUNDS = 9;
+
+const cfg = { difficultyId:'d1', gridSize:3 };
+const getDiff = () => DIFFICULTIES.find(d => d.id === cfg.difficultyId);
+
+function maxGridFor(diff){
+  const n = diff.nums.length;
+  if (n >= 25) return 5;
+  if (n >= 16) return 4;
+  return 3;
+}
+
+/* ==================== 设置界面渲染 ==================== */
+function renderDifficultyOptions(){
+  const wrap = $('difficultyOptions');
+  wrap.innerHTML = '';
+  DIFFICULTIES.forEach(d => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'opt' + (cfg.difficultyId === d.id ? ' selected' : '');
+    btn.innerHTML =
+      `<span class="opt-main">${d.label}</span>
+       <span class="opt-sub">${d.tag}</span>
+       <span class="stars">${'★'.repeat(d.stars)}${'☆'.repeat(3 - d.stars)}</span>`;
+    btn.addEventListener('click', () => {
+      cfg.difficultyId = d.id;
+      const maxG = maxGridFor(d);
+      if (cfg.gridSize > maxG) cfg.gridSize = maxG;
+      renderDifficultyOptions();
+      renderGridOptions();
+    });
+    wrap.appendChild(btn);
+  });
+}
+
+function renderGridOptions(){
+  const wrap = $('gridOptions');
+  const diff = getDiff();
+  const maxG = maxGridFor(diff);
+  wrap.innerHTML = '';
+
+  GRIDS.forEach(g => {
+    const disabled = g.size > maxG;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.disabled = disabled;
+    btn.className = 'opt' + (cfg.gridSize === g.size ? ' selected' : '') + (disabled ? ' disabled' : '');
+    btn.innerHTML =
+      `<span class="opt-main">${g.label}</span>
+       <span class="opt-sub">${g.size * g.size} 个格子</span>`;
+    if (!disabled){
+      btn.addEventListener('click', () => {
+        cfg.gridSize = g.size;
+        renderGridOptions();
+      });
+    }
+    wrap.appendChild(btn);
+  });
+
+  const tip = $('gridTip');
+  if (maxG < 5){
+    tip.style.display = 'block';
+    tip.textContent = `「${diff.label}」一共只有 ${diff.nums.length} 个数字，最多只能选 ${maxG} × ${maxG} 哦～`;
+  } else {
+    tip.style.display = 'none';
+  }
+}
+
+/* ==================== 英文数字朗读 ==================== */
+const ONES = ['zero','one','two','three','four','five','six','seven','eight','nine',
+              'ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen',
+              'seventeen','eighteen','nineteen'];
+const TENS = ['','','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
+
+function numberToWords(n){
+  if (n === 100) return 'one hundred';
+  if (n < 20) return ONES[n];
+  if (n < 100){
+    const t = Math.floor(n / 10), o = n % 10;
+    return TENS[t] + (o ? '-' + ONES[o] : '');
+  }
+  return String(n);
+}
+
+let voiceList = [];
+function loadVoices(){
+  if (!('speechSynthesis' in window)) return;
+  try { voiceList = speechSynthesis.getVoices() || []; } catch(e){ voiceList = []; }
+}
+if ('speechSynthesis' in window){
+  loadVoices();
+  speechSynthesis.onvoiceschanged = loadVoices;
+  setTimeout(loadVoices, 400);
+}
+
+let speakSeq = 0;
+function speakNumber(n, onEnd){
+  const seq = ++speakSeq;
+  let finished = false;
+  const done = () => {
+    if (finished) return;
+    finished = true;
+    if (onEnd && seq === speakSeq) onEnd();
+  };
+
+  if (!('speechSynthesis' in window)){ setTimeout(done, 600); return; }
+
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(numberToWords(n));
+    u.lang = 'en-US';
+    u.rate = 0.8;
+    u.pitch = 1.1;
+    u.volume = 1;
+
+    const v = voiceList.find(x => /en[-_]US/i.test(x.lang))
+           || voiceList.find(x => /^en/i.test(x.lang));
+    if (v) u.voice = v;
+
+    u.onend = done;
+    u.onerror = done;
+    speechSynthesis.speak(u);
+
+    setTimeout(done, 3500); // 兜底
+  } catch(e){
+    setTimeout(done, 600);
+  }
+}
+
+/* ==================== 游戏状态 ==================== */
+let game = null;
+
+function startGame(){
+  const diff = getDiff();
+  const n = cfg.gridSize;
+  const cellCount = n * n;
+
+  const picked = shuffle(diff.nums).slice(0, cellCount);
+  const roundNums = shuffle(picked).slice(0, Math.min(TOTAL_ROUNDS, picked.length));
+
+  game = {
+    gridSize: n,
+    rounds: roundNums.length,
+    roundNums,
+    roundIndex: 0,
+    target: null,
+    scores: [0, 0],
+    locked: true,
+    over: false
+  };
+
+  buildBoard(0, shuffle(picked), n);
+  buildBoard(1, shuffle(picked), n);
+
+  $('score0').textContent = '0';
+  $('score1').textContent = '0';
+  $('roundNum').textContent = '1';
+
+  layoutBoards();
+  setTimeout(nextRound, 650);
+}
+
+function buildBoard(playerIdx, values, n){
+  const board = $('board' + playerIdx);
+  board.innerHTML = '';
+  board.style.gridTemplateColumns = `repeat(${n}, 1fr)`;
+
+  values.forEach(v => {
+    const cell = document.createElement('button');
+    cell.type = 'button';
+    cell.className = 'cell';
+    cell.textContent = v;
+    cell.dataset.value = v;
+    cell.addEventListener('click', () => handleCellClick(playerIdx, cell, v));
+    board.appendChild(cell);
+  });
+}
+
+function layoutBoards(){
+  if (!game) return;
+  const n = game.gridSize;
+  const size = Math.max(188, Math.min(window.innerWidth * 0.365, window.innerHeight * 0.56));
+  const pad = Math.max(6, Math.round(size * 0.024));
+  const gap = Math.max(4, Math.round(size * 0.016));
+  const cellFont = Math.round((size - pad * 2 - gap * (n - 1)) / n * 0.40);
+
+  document.querySelectorAll('.board').forEach(b => {
+    b.style.width = size + 'px';
+    b.style.height = size + 'px';
+    b.style.padding = pad + 'px';
+    b.style.gap = gap + 'px';
+  });
+  document.querySelectorAll('.cell').forEach(c => {
+    c.style.fontSize = cellFont + 'px';
+    c.style.borderRadius = Math.round(cellFont * 0.34) + 'px';
+  });
+}
+
+/* ==================== 回合流程 ==================== */
+function nextRound(){
+  if (!game || game.over) return;
+
+  game.target = game.roundNums[game.roundIndex];
+  game.locked = true;
+  $('roundNum').textContent = game.roundIndex + 1;
+
+  setTimeout(() => {
+    speakNumber(game.target, () => {
+      if (game && !game.over) game.locked = false;
+    });
+  }, 400);
+}
+
+function handleCellClick(playerIdx, cell, value){
+  if (!game || game.locked || game.over) return;
+
+  if (Number(value) === Number(game.target)){
+    game.locked = true;
+    game.scores[playerIdx]++;
+    updateScore(playerIdx);
+    showPlusOne(cell);
+    revealAnswer(game.target, playerIdx);
+    game.roundIndex++;
+
+    setTimeout(() => {
+      clearReveal();
+      if (!game || game.over) return;
+      if (game.roundIndex >= game.rounds) endGame();
+      else nextRound();
+    }, 1500);
+
+  } else {
+    cell.classList.add('wrong');
+    setTimeout(() => cell.classList.remove('wrong'), 500);
+  }
+}
+
+function updateScore(i){
+  const el = $('score' + i);
+  el.textContent = game.scores[i];
+  el.classList.remove('bump');
+  void el.offsetWidth;
+  el.classList.add('bump');
+}
+
+function showPlusOne(cell){
+  const r = cell.getBoundingClientRect();
+  const el = document.createElement('div');
+  el.className = 'plus-one';
+  el.textContent = '+1';
+  el.style.left = (r.left + r.width / 2) + 'px';
+  el.style.top  = (r.top + r.height / 2) + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 950);
+}
+
+function revealAnswer(target, winnerIdx){
+  for (let p = 0; p < 2; p++){
+    document.querySelectorAll('#board' + p + ' .cell').forEach(c => {
+      if (Number(c.dataset.value) === Number(target)){
+        c.classList.add(p === winnerIdx ? 'correct' : 'reveal');
+      }
+    });
+  }
+}
+
+function clearReveal(){
+  document.querySelectorAll('.cell').forEach(c => {
+    c.classList.remove('correct', 'reveal', 'wrong');
+  });
+}
+
+function replaySound(){
+  if (!game || game.over || game.target === null) return;
+  speakNumber(game.target);
+}
+
+/* ==================== 彩带特效 ==================== */
+function launchConfetti(intensity){
+  const layer = $('confettiLayer');
+  layer.innerHTML = '';
+  if (!intensity) return;
+
+  const colors = ['#FFD180','#FFB13D','#7EC8E3','#F4A6A0','#A8E6A3','#C9B6F0','#FFFFFF'];
+  const total = Math.round((window.innerWidth < 600 ? 60 : 100) * intensity);
+
+  for (let i = 0; i < total; i++){
+    const p = document.createElement('div');
+    p.className = 'confetti';
+
+    const base = 7 + Math.random() * 9;
+    const isStrip = Math.random() < 0.32;
+
+    p.style.width  = (isStrip ? base * 0.45 : base) + 'px';
+    p.style.height = (isStrip ? base * 1.9  : base) + 'px';
+    p.style.borderRadius = Math.random() < 0.4 ? '50%' : '3px';
+    p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+    p.style.left = (Math.random() * 100) + '%';
+    p.style.setProperty('--drift', (Math.random() * 240 - 120) + 'px');
+    p.style.setProperty('--spin', (Math.random() * 900 - 450) + 'deg');
+    p.style.animationDelay = (Math.random() * 1.8) + 's';
+    p.style.animationDuration = (2.4 + Math.random() * 2.4) + 's';
+
+    layer.appendChild(p);
+  }
+}
+
+function clearConfetti(){
+  $('confettiLayer').innerHTML = '';
+}
+
+/* ==================== 结算 ==================== */
+function endGame(){
+  game.over = true;
+  game.locked = true;
+
+  const a = game.scores[0], b = game.scores[1];
+  $('finalScore0').textContent = a;
+  $('finalScore1').textContent = b;
+
+  const rs0 = $('rs0'), rs1 = $('rs1');
+  rs0.classList.remove('winner');
+  rs1.classList.remove('winner');
+
+  let emoji, title;
+  if (a > b){
+    emoji = '🏆'; title = '🐻 小朋友 A 获胜！';
+    rs0.classList.add('winner');
+  } else if (b > a){
+    emoji = '🏆'; title = '🐰 小朋友 B 获胜！';
+    rs1.classList.add('winner');
+  } else {
+    emoji = '🤝'; title = '平局！两个人都很棒！';
+  }
+
+  $('resultEmoji').textContent = emoji;
+  $('resultTitle').textContent = title;
+
+  $('resultScreen').classList.remove('hidden');
+  launchConfetti(a === b ? 0.55 : 1);
+}
+
+/* ==================== 界面切换 ==================== */
+function backToSetup(){
+  if ('speechSynthesis' in window){ try { speechSynthesis.cancel(); } catch(e){} }
+  game = null;
+  clearConfetti();
+  $('gameScreen').classList.add('hidden');
+  $('resultScreen').classList.add('hidden');
+  $('setupScreen').classList.remove('hidden');
+  $('setupScreen').scrollTop = 0;
+}
+
+/* ==================== 初始化 ==================== */
+function init(){
+  renderDifficultyOptions();
+  renderGridOptions();
+
+  $('startBtn').addEventListener('click', () => {
+    $('setupScreen').classList.add('hidden');
+    $('resultScreen').classList.add('hidden');
+    clearConfetti();
+    $('gameScreen').classList.remove('hidden');
+    startGame();
+  });
+
+  $('speakerBtn').addEventListener('click', replaySound);
+  $('quitBtn').addEventListener('click', backToSetup);
+
+  $('againBtn').addEventListener('click', () => {
+    $('resultScreen').classList.add('hidden');
+    clearConfetti();
+    startGame();
+  });
+
+  $('backBtn').addEventListener('click', backToSetup);
+
+  window.addEventListener('resize', () => {
+    if (game && !game.over) layoutBoards();
+  });
+  window.addEventListener('orientationchange', () => {
+    setTimeout(() => { if (game && !game.over) layoutBoards(); }, 300);
+  });
+}
+
+init();
+</script>
+</body>
+</html>
